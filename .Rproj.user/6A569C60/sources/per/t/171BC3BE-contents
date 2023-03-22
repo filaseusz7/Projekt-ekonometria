@@ -1,0 +1,135 @@
+---
+title: "Projekt - ekonometria"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Ramka danych, którą będziemy analizować zawiera 7500 różnych czerwonych win pochodzenia Hiszpaśkiego, które opisane są przez jedenaście cech takich jak np. cena, region, winiarnia. Dane zostały zebrane za pomocą web scrapingu z różnych źródeł (od stron specjalizujących się w winach po supermarkety).
+
+Informacje o cechach:
+
+1. **winery** - nazwa winiarni
+
+2. **wine** - nazwa wina
+
+3. **year** - rok, w którym zebrano winogrona
+
+4. **rating** - średnia ocena wina przyznana przez
+użytkowników
+
+5. **num_reviews** - liczba użytkowników, która oceniła wino
+
+6. **country** - kraj pochodzenia wina
+
+7. **region** - region, z którego pochodzi wino
+
+8. **price** - cena wina w €
+
+9. **typ** - typ wina
+
+10. **body** - smak wina definiowany jako bogactwo i waga wina w ustach
+
+11. **acidity** - ocena kwasowości wina
+
+
+**Źródło danych** - [kaggle.com](https://www.kaggle.com/datasets/fedesoriano/spanish-wine-quality-dataset?fbclid=IwAR0PPTKB_U7lC_qTS9a6b1iytN-33YwvL6CfxyjrEDLl09JlKwgXAvRulUw)
+
+```{r}
+install.packages('dplyr')
+library(dplyr)
+install.packages('tidyverse')
+library(tidyverse)
+```
+
+Przedstawienie danych za pomocą funkcji `summary`.
+```{r}
+dane <- read.csv("wines_SPA.csv")
+summary(dane)
+```
+
+
+```{r}
+dane %>% count(winery)
+
+```
+
+- Możemy zauważyć, że większość winiarni posiada tylko nieznaczną część wszystkich win
+
+Ta sama sytuacja pojawia się w przypadku:
+
+- regionów
+```{r}
+dane %>% count(region)
+```
+- typów wina
+```{r}
+dane %>% count(type)
+```
+- samych win
+```{r}
+dane %>% count(wine)
+```
+
+
+
+
+Kilka wykresów obrazujących inne problemy z naszymi danymi
+
+```{r}
+ggplot(dane, aes(price)) +
+  geom_density() +
+  labs(title = "Rozkład cen poszczególnych win", x = "cena", y = "") +
+  theme_light()
+```
+- Rozkład gęstości cen win uwidacznia bardzo długi ogon
+```{r}
+dane0 <- dane %>% filter(price <= 150)
+ggplot(dane0, aes(price)) +
+  geom_density() +
+  labs(title = "Rozkład cen poszczególnych win", x = "cena", y = "") +
+  theme_light()
+```
+
+```{r}
+dane1 <- dane %>% filter(price <= 80)
+nrow(dane1)/nrow(dane)
+```
+- Zauważmy, że ponad 90% win kosztuje mniej niż 80€
+
+Teraz zobaczmy jak wygląda rozkład liczby ocen win
+```{r}
+ggplot(dane, aes(num_reviews)) +
+  geom_density() +
+  labs(title = "Rozkład liczby ocen poszczególnych win", x = "liczba ocen", y = "") +
+  theme_light()
+```
+
+- W tym przypadku również możemy zaobserwować podobną sytuację
+```{r}
+dane2 <- dane %>% filter(num_reviews <= 1000)
+ggplot(dane2, aes(num_reviews)) +
+  geom_density() +
+  labs(title = "Rozkład liczby ocen poszczególnych win", x = "liczba ocen", y = "") +
+  theme_light()
+```
+
+```{r}
+dane3 <- dane %>% filter(num_reviews <= 800, num_reviews >= 100)
+nrow(dane3)/nrow(dane)
+```
+- Liczba ocen ponad 84% win mieści się w przedziale od 100 do 800.
+
+Możemy również zobaczyć, że kolumna `body` zawiera wartości od 2 do 5, z czego wartości równych 2 jest zdecydowanie za mało, żeby brać je pod uwagę.
+```{r}
+dane %>% count(body)
+```
+
+Tak samo jest w przypadku kolumny `acidity`, gdzie ilość pól z wartością '1' jest wynosi zaledwie 4.
+```{r}
+dane %>% count(acidity)
+```
+
+
+

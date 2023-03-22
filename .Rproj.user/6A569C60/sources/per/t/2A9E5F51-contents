@@ -1,0 +1,303 @@
+############## Szeregi czasowe
+
+food <- read.csv("C:/Users/DELL/Desktop/Cwiczenia - ekonometria(najnowsze)/food_prices.csv") %>%
+  mutate(DATE =as.Date(DATE))
+plot(food$DATE, food$PFOODINDEXM, type = 'l')
+
+y <- rnorm(100)
+plot(y, type = 'l')  #bially szum
+
+n <- 100
+a <- 0.5
+y <- rep(0, n) #wektor o dlugosci 100 skladajacy sie z samych 0
+
+for(i in 2:n){
+  y[i] <- a*y[i-1] + rnorm(1)
+}
+plot(y, type = 'l')
+
+
+n <- 100
+a <- 1.1
+y <- rep(0, n) #wektor o dlugosci 100 skladajacy sie z samych 0
+
+for(i in 2:n){
+  y[i] <- a*y[i-1] + rnorm(1)
+}
+plot(y, type = 'l') #przez wartosc a wieksza od 1 tal to wyglada
+
+
+n <- 100
+a <- -1.1
+y <- rep(0, n) #wektor o dlugosci 100 skladajacy sie z samych 0
+
+for(i in 2:n){
+  y[i] <- a*y[i-1] + rnorm(1)
+}
+plot(y, type = 'l') #teraz ma tendencje do zawracania
+
+############### chcemy sprawdzic jak czesto model liniowy nabierze sie na regresje pozorna(mamy dwie totalnie niezalezne zmienne)
+
+n <- 100
+a <- 1.001
+y <- rep(0, n)
+x <- rep(0, n)
+
+for(i in 2:n){
+  x[i] <- a*x[i-1] + rnorm(1)
+  y[i] <- a*y[i-1] + rnorm(1)
+}
+plot(y, type = 'l') 
+
+for(i in 1:1000){
+    
+}
+
+#####################
+n <- 100
+a <- 1.001
+y <- rep(0, n)
+licznik <- 0
+
+for(i in 1:1000){
+  y <- rep(0, n)
+  for(i in 2:n){
+    y[i] <- a*y[i-1] + rnorm(1)
+  }
+  z <- rep(0, n)
+  for(i in 2:n){
+    z[i] <- a*z[i-1] + rnorm(1)
+  }
+  modelzy <- lm(y~z)
+  s <- summary(modelzy)
+  
+  if(s$coefficients[2,4]<0.05){
+    licznik= licznik+1
+  }
+}
+wynik <- x/10
+
+#interpretacja wyniki - tyle procent jest nieistotnych albo istotnych -to sie musze dowiedziec jeszcze
+
+acf(food$PFOODINDEXM, lag.max = nrow(food)) #lag.max - opoznienia, korelacja miedzy kazdym kolejnym elementem a poprzednim
+pacf(food$PFOODINDEXM)#jaka czesc jest niewyjasniona przez poprzednie korelacje, 
+
+
+#test statystyczny
+Box.test(food$PFOODINDEXM) #H0- autokorelacja nie wystepuje, lag-ile chcmy uwzglednic opoznien
+Box.test(food$PFOODINDEXM, lag = 3)
+
+Box.test(diff(food$PFOODINDEXM)) #roznicowanie - pozbywamy sie glownego trendu  #to daje nam informacje ze y jest zalezny tylko od jednej wartosci w tył
+
+#tak dla obrazu
+#x[i] - x[i-1] <- a*x[i-1]
+
+plot(diff(y), type = 'l')
+
+
+arima(food$PFOODINDEXM, order = c(1, 0, 1)) #w pierwszym po c podajemy od ilu wartosci w tyl powinien byc zalezny nasz y, my ustalilismy, ze od jednej
+#nie wiem skad te 2 nastepne w c(), 2 parametr - liczymy model dla roznic a nie dla pierwotnej wartosci
+
+#aic - im nizsze tym lepsze
+#najwazniejszym elementem jest oszacowanie jak duzo tych opoznien bedziemy miec w tym modelu
+
+
+##################### model logitowy
+
+ #chcemy prognozowac czy ktos przezyje czy nie czyli survived
+#sibsp - ile mieli na pokladzie rodziny, embarked - w jakim porcie
+#nie jest to szereg czasowy bo kolejnosc nie ma znaczenia
+#prognoza ma nam dac wyniki zero-jedynkowe
+
+titanic <- read.csv("titanic.csv", na.string = '') %>%
+  mutate(across(c('Pclass', 'Sex', 'Cabin', 'Embarked'), as.factor)) %>%
+  select(-PassengerId, -Name, -Ticket, -Cabin) #usuwamy niepotrzebne zmienne
+
+summary(titanic)
+
+titanic <- titanic[complete.cases(titanic),] #oczyszczenie danych(?)
+
+model <- lm(Survived ~.,titanic)
+summary(model)
+##
+
+hist(model$fitted.values)
+#niekorzystna sytuacja wiec chcemy zrobic transformacje, chcemy rzutowac do funkcji ktora przyjmuje wartpsci tylko od 0 do 1
+
+x <- seq(-10, 10, 0.5)
+plot(x)
+
+plot(exp(x)/(1+exp(x)))#to przeksztalcenie o ktorym mowimy, mozna to zostawic i interpretowac jako prawdopodobienstwo
+
+model <- glm(Survived~., data = titanic, family = binomial(link = 'logit'))
+summary(model)
+
+hist(model$fitted.values) #prawdopodobienstwo ze mienna survival bedzie rowna 1
+
+###np.0,8 byloby prawdopodobienstwem ze ktos przezyl katastrofe
+
+
+model1 <- glm(Survived~. -Parch -Fare, data = titanic, family = binomial(link = 'logit'))
+summary(model1)
+####AIC nam spada jak usuniemy te zmienne Parch i Fare, czyli to dobrze
+
+
+##ustalamy jakie prawdopodobienstwo byloby dla mnie ze przezyje (chyba)
+test <- data.frame(
+  Pclass = '3', Sex = 'male', Age = 21.00, SibSp = 2, Embarked = 'S', Parch = 2, Fare = 0
+)
+
+prediction <- predict(model, newdata = test, type = 'response')
+prediction <- ifelse(prediction >= 0.5, 1, 0)
+prediction
+
+
+install.packages("tidyverse")
+library(tidyverse)
+##chcemy miec dwie czesci z tego pliku titanic treningową i testową cos tam dzielimy na 80% i 20% chyba
+titanic$Nr <- 1:nrow(titanic)
+titanic <- titanic %>% select(-Nr)
+#albo
+rows <- 1:nrow(titanic)
+sample_train <- sample(rows, size = round(0.8*nrow(titanic)))
+train <- titanic %>% slice(sample_train)
+test <- titanic %>% slice(-sample_train)
+
+model <- glm(Survived~. -Parch -Fare, data = titanic, family = binomial(link = 'logit'))
+summary(model)
+
+prediction <- predict(model, newdata = test, type = 'response')
+prediction <- ifelse(prediction >= 0.5, 1, 0)
+prediction
+
+df <- data.frame(
+  Real = test$Survived,
+  Pred = prediction
+)
+
+df %>% filter(Real == 0, Pred == 0) %>% count()
+
+table <- data.frame(
+  Real_0 = c(
+    Pred_0 = df %>% filter(Real == 0, Pred == 0) %>% count(),
+    Pred_1 = df %>% filter(Real == 0, Pred == 1) %>% count()
+  ),
+  Real_1 = c(
+    Pred_0 = df %>% filter(Real == 1, Pred == 0) %>% count(),
+    Pred_1 = df %>% filter(Real == 1, Pred == 1) %>% count()
+  )
+)
+
+view(table)
+
+accuracy <- (table[1] + table[4])/sum(table)
+accuracy
+sensivity <- table[4]/(table[4] + table[3])
+sensivity #wrazliwosc, ze jak czesto jesli mamy do czynienia z jedynka to uda nam sie ja wylapac
+specifity <- table[1]/(table[1] + table[2])
+specifity #jest wazna kiedy wiekszosc z populacji jest 0, bo wtedy duzo testow wyjdzie falszywie, tych ktore sa prawdziwe
+
+#np test na covid: mamy 10000 i tylko 100 osob z nich jest chorych, specifity = 80% i sensivity = 80%, 
+#ile osob dostanie pozytywny wynik?
+#0.8 * 100 + 0.2 * (10000-100) = 80 + 1980 = 2060
+#1980/2060 = 
+
+
+
+
+################################################## noweeeeee
+
+#zarzadzanie danymi
+files <- list.files(path = "data_", full.names = T) #full.names - dodaje od razu sciezke
+
+#zeby zastosowac jakas funkcje dla kazdego elementu tej listy - lapply
+data_files <- lapply(files, read.csv)
+
+View(data_files)
+#tym ostatnim plikiem zajmiemy sie pozniej
+
+#teraz laczymy pierwsze 3 pliki
+annual_data <- full_join(data_files[[1]],
+                         data_files[[2]], #trzeba z dwoma ale nie wiem czemu
+                         ) %>%
+  full_join(data_files[[3]])
+colnames(annual_data)[4:6] <- c("Gini", "Health","MedianAge")
+#Health - ile pkb jest przekazywane na zdrowie
+View(annual_data)
+
+#musimy sprobowac znalezc taka wartosc dla kazdej z tych zmiennych ktora ma najwyzszy rok i nie jest to NA
+
+newest_data <- annual_data %>% select(-Code) %>% pivot_longer(cols = c("Gini", "Health","MedianAge"),
+                                                     names_to = "Indicator", values_to = "Values")
+#pivot_longer - chcemy miec wszystkie wartosci wskaznikow w jednej kolumnie i oprocz tego miec 
+#kolumne ktora nam okresla co to jest za wskaznik
+View(newest_data)
+
+
+
+
+#nastepne zajecia ale kontynuujemy
+summary(annual_data)
+
+
+#to juz bylo wyzej ale modyfikujemy
+newest_data <- annual_data %>% select(-Code) %>% pivot_longer(cols = c("Gini", "Health","MedianAge"),
+                                                              names_to = "Indicator", values_to = "Values") %>%
+  filter(!is.na(Values)) %>% group_by(Entity, Indicator) %>% filter(Year == max(Year)) %>% select(-Year) %>%
+  pivot_wider(id_cols = "Entity", names_from = "Indicator", values_from = "Values") %>%
+  filter(across(everything(), complete.cases))
+
+
+covid_data <- data_files[[4]]
+View(covid_data)
+
+covid_data <- data_files[[4]] %>% select(Entity=location, date, Cases=total_cases_per_million, 
+                                         Deaths = total_deaths_per_million) %>%
+  mutate(Year = substr(date, 1, 4)) %>% group_by(Entity, Year) %>%
+  summarise(Cases = max(Cases, na.rm = T), Deaths = max(Deaths, na.rm = T)) %>%
+  filter(is.finite(Deaths))
+
+merged_data <- inner_join(covid_data, newest_data, by = "Entity")
+View(merged_data)
+
+model <- lm(Deaths ~ ., merged_data[,-1])
+summary(model)
+
+
+
+
+#######nowe rzeczy- nieliniowy model
+
+A = 2
+alpha = 0.3
+beta = 0.7
+
+K <- 1:150
+L <- 1:150
+
+comb <- expand.grid(K, L) %>% rename(K = Var1, L = Var2) %>% 
+  mutate(Q = A*K^alpha*L^beta)
+View(comb)
+
+comb %>% ggplot(aes(x = K, y = L, fill = Q)) + geom_tile()
+
+Q1 <- A*100^alpha*100^beta
+Q2 <- A*101^alpha*100^beta
+Q3 <- A*100^alpha*101^beta
+
+(Q2 - Q1)/Q1*100 #wartosc alfy chyba
+(Q3 - Q1)/Q1*100 #WARTOSC bety
+
+A*100^alpha*100^beta
+A*110^alpha*110^beta
+
+cd_data <- read.csv("CD data.csv", sep = ";")
+View(cd_data)
+
+#cap - capital
+#emp - employment
+#Q to nie wiem, ale podobno oczywiste
+model <- lm(log(Q) ~ log(Cap) + log(Emp), cd_data)
+summary(model)
+
+exp(model$coefficients[1]) #chyba to nasza alpha ale nie wiem

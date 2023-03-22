@@ -1,0 +1,233 @@
+install.packages('dplyr')
+install.packages('tidyverse')
+install.packages('corrplot')
+install.packages('lmtest')
+install.packages('moments')
+library(dplyr)
+library(tidyverse)
+library(corrplot)
+library(lmtest)
+library(moments)
+dane <- read.csv('wines_SPA.csv') 
+dane <- select(dane, -country, -wine)
+dane <- dane[!(dane$price>80),]
+dane <- dane[!(dane$num_reviews<100),]
+dane <- dane[!(dane$num_reviews>800),]
+dane <- dane[!(dane$year=='N.V.'),]
+dane <- dane[!(dane$year==''),]
+dane <- dane[complete.cases(dane),]
+dane <- dane[!(dane$body==2),]
+dane <- dane[!(dane$acidity==1),]
+#czyszczenie winiarni
+winiarnie <- data.frame(unique(dane$winery))
+for(i in 1:length(unique(dane$winery))){
+  winiarnie[i,2] <- sum(dane$winery==winiarnie[i, 1])
+}
+for(i in 1:length(winiarnie[,1])){
+  for(j in 1:length(dane$winery))
+  {
+    if(winiarnie$unique.dane.winery[i] == dane$winery[j])
+    {
+      if(winiarnie$V2[i] < 13){
+        dane$winery[j] <- 'Inne'
+      }
+    }
+  }
+}
+
+winiarnie <- data.frame(unique(dane$winery))
+for(i in 1:length(unique(dane$winery))){
+  winiarnie[i,2] <- sum(dane$winery==winiarnie[i, 1])
+}
+# czyszczenie regionów
+regiony <- data.frame(unique(dane$region))
+for(i in 1:length(unique(dane$region))){
+ regiony[i,2] <- sum(dane$region==regiony[i, 1])
+}
+for(i in 1:length(regiony[,1])){
+  for(j in 1:length(dane$region))
+  {
+    if(regiony$unique.dane.region[i] == dane$region[j])
+    {
+      if(regiony$V2[i] < 20){
+        dane$region[j] <- 'Inne'
+      }
+    }
+  }
+}
+
+regiony <- data.frame(unique(dane$region))
+for(i in 1:length(unique(dane$region))){
+  regiony[i,2] <- sum(dane$region==regiony[i, 1])
+}
+#czysczenie typów
+typy <- data.frame(unique(dane$type))
+for(i in 1:length(unique(dane$type))){
+  typy[i,2] <- sum(dane$type==typy[i, 1])
+}
+for(i in 1:length(typy[,1])){
+  for(j in 1:length(dane$type))
+  {
+    if(typy$unique.dane.type[i] == dane$type[j])
+    {
+      if(typy$V2[i] < 70){
+        dane$type[j] <- 'Inne'
+      }
+    }
+  }
+}
+
+typy <- data.frame(unique(dane$type))
+for(i in 1:length(unique(dane$type))){
+  typy[i,2] <- sum(dane$type==typy[i, 1])
+}
+
+
+dane <- dane %>%
+  mutate(across(c("winery", "region", "body", "acidity", "type"), as.factor))
+summary(dane)
+
+rows <- 1:nrow(dane)
+sample_train <- sample(rows, size = round(0.8 * nrow(dane)))
+train <- dane %>% slice(sample_train)
+test <- dane %>% slice(-sample_train)
+
+train <- train[!(train$year==""),]
+model <- lm(price ~ .-region-type, data=train)
+summary(model)
+
+# diagnostyka
+
+mean(model$residuals)
+
+dwtest(model) # test Durbina Watsona - autokorelacja
+# wniosek -> brak autokorelacji
+
+
+# v cramer
+
+# V cramer dla region-cena
+region_cena <- matrix(0,nrow=11,ncol=11)
+cenyRi <- c()
+sumRi <- c()
+for(k in 1:11){
+  for(j in 1:11){
+    sumRi[j] = 0
+    for(i in 1:length(dane[,1])){
+      if(j==11){
+        if(dane$region[i]==regiony$unique.dane.region.[k] & dane$price[i]>=7*j)
+          region_cena[k,j]=region_cena[k,j]+1
+      }
+      if(j<11){
+        if(dane$region[i]==regiony$unique.dane.region.[k] & dane$price[i]<7*j & dane$price[i]>=7*j-7  )
+          region_cena[k,j]=region_cena[k,j]+1}
+    }
+  }}
+# powstaje nam taka macierz:
+region_cena
+# Liczymy v cramera
+cramerV(region_cena)
+
+#V cramer dla typ cena
+typ_cena <- matrix(0,nrow=9,ncol=9)
+cenyTyp <- c()
+sumTyp <- c()
+for(k in 1:9){
+  for(j in 1:9){
+    sumTyp[j] = 0
+    for(i in 1:length(dane[,1])){
+      if(j==9){
+        if(dane$type[i]==typy$unique.dane.type.[k] & dane$price[i]>=8*j)
+          typ_cena[k,j]=typ_cena[k,j]+1
+      }
+      if(j<9){
+        if(dane$type[i]==typy$unique.dane.type.[k] & dane$price[i]<8*j & dane$price[i]>=8*j-8  )
+          typ_cena[k,j]=typ_cena[k,j]+1}
+    }
+  }}
+# powstaje nam taka macierz:
+typ_cena
+# Liczymy v cramera
+cramerV(typ_cena)
+
+# v cramer dla winiarnia-cena
+winiarnia_cena <- matrix(0,nrow=23,ncol=23)
+cenyWiniarnia <- c()
+sumWiniarnia <- c()
+for(k in 1:23){
+  for(j in 1:23){
+    sumTyp[j] = 0
+    for(i in 1:length(dane[,1])){
+      if(j==23){
+        if(dane$winery[i]==winiarnie$unique.dane.winery.[k] & dane$price[i]>=7+3*j)
+          winiarnia_cena[k,j]=winiarnia_cena[k,j]+1
+      }
+      if(j<23&j>1){
+        if(dane$winery[i]==winiarnie$unique.dane.winery.[k] & dane$price[i]<7+3*(j-1) & dane$price[i]>=3*(j-1)-3+7  )
+          winiarnia_cena[k,j]=winiarnia_cena[k,j]+1
+      }
+      if(j==1){
+        if(dane$winery[i]==winiarnie$unique.dane.winery.[k] & dane$price[i]<7)
+          winiarnia_cena[k,j]=winiarnia_cena[k,j]+1}
+    }
+  }}
+# powstaje nam taka macierz:
+winiarnia_cena
+# Liczymy v cramera
+cramerV(winiarnia_cena)
+
+# Sprawdzamy gdzie v-cramer jest największy
+cramerV(typ_cena)
+cramerV(region_cena)
+cramerV(winiarnia_cena)
+
+# Największy v cramer wychodzi dla winiarnia-cena i wynosi on 0.72
+
+# heteroskedastyczność
+bptest(model) # studentized Breusch Pagan test
+
+gqtest(model, point = 0.7, order.by = ~price, data = train) # Goldfield-Quandt test
+
+# normalność reszt
+
+shapiro.test(model$residuals)
+
+# uniqWinery <- unique(dane$winery)
+# uniqType <- unique(dane$type)
+# 
+# df_type_winery <- matrix(0,length(uniqWinery),length(uniqType))
+# df_type_winery <- data.frame(df_type_winery)
+# for(i in 1:length(uniqWinery)){
+#   for(j in 1:length(uniqType)){
+#     for(k in 1:length(dane$winery)){
+#     if(uniqWinery[i] == dane$winery[k])
+#      {
+#         if(uniqType[j] == dane$type[k]){
+#          df_type_winery[i,j] <- df_type_winery[i,j] + 1
+#         }
+#       }
+#     }
+#   }
+# }
+# colnames(df_type_winery) <- uniqType
+# rownames(df_type_winery) <- uniqWinery
+
+skewness(train$price)
+kurtosis(train$price)
+hist(train$price)
+plot(train$num_reviews, train$price)
+abline(lm(train$price~train$num_reviews), col='blue')
+plot(train$rating, train$price)
+abline(lm(train$price~train$rating), col='blue')
+plot(model$fitted.values, model$residuals)
+hist(model$residuals)
+
+
+
+# predykcja
+prediction <- predict(model, newdata = test, se.fit = T)
+ex_post <- test$price - prediction$fit
+MAE <- mean(abs(ex_post)) # mean absolute error
+RMSE <- mean(sqrt(ex_post^2)) # root mean squared error
+MAPE <- mean(abs(((test$price - prediction$fit)/test$price)))  # mean absolute percentage error
+

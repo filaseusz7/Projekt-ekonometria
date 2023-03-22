@@ -1,0 +1,2 @@
+"0","typ <- dane %>% count(type)"
+"0","hist(typ$n, breaks = 30)"

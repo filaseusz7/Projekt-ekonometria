@@ -1,0 +1,2 @@
+"0","wina <- dane %>% count(wine)"
+"0","hist(wina$n, breaks = 30)"

@@ -1,0 +1,30 @@
+---
+title: "Hiszpańskie Wina"
+author: "Patryk Góreczny, Kamil Husak, Mateusz Filas"
+date: '2022-05-12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages('dplyr')
+library('dplyr')
+```
+
+Wczytujemy dane z pliku wines_SPA
+Usuwamy zbędną kolumnę country, ponieważ występuje w niej jedna i ta sama wartość - Espana
+Usuwamy 'ogon' dla cen win oraz liczby ocen aby nie zakłamywały wyników
+
+```{r}
+dane <- read.csv('wines_SPA.csv')
+dane <- select(dane, -country)
+dane <- dane[!(dane$price>80),]
+dane <- dane[!(dane$num_reviews<100),]
+dane <- dane[!(dane$num_reviews>800),]
+dane <- dane[!(dane$year=='N.V.'),]
+dane <- dane[complete.cases(dane),]
+for(i in unique(dane)){
+  print(i)
+}
+```
+

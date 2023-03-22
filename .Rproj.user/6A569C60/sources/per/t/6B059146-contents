@@ -1,0 +1,38 @@
+data <- read.csv("C:/Users/DELL/Desktop/Semestr 4/Ekonometria/Cwiczenia - ekonometria(najnowsze)/countries of the world.csv", dec = ',')
+summary(data)
+
+mean(data$Population)
+median(data$Population)
+var(data$Population) #wariancja
+sd(data$Population)  #odchylenie
+cor(data$Population, data$GDP....per.capita.)  #korelacja
+
+mean(data$GDP....per.capita.)
+mean(data$GDP....per.capita., na.rm = TRUE)
+
+data[2, 3]
+
+data[complete.cases(data),]
+
+data <- data[complete.cases(data),]
+
+colnames(data) <- c("Country", "Region", "Pop", "Area", "PopDens", "Coastline", "Migration", "InfMortality", "GDP",
+                    "Literacy", "Phones", "Arable", "Crops", "Other", "Climate", "Birthrate", "Deathrate", "Agri",
+                    "Industry", "Service")
+
+# y = a + b*x + E
+modell <- lm(GDP ~ Migration, data)
+#intercept to jest a
+#migration - przyrost migracji o jedna jednostke wiaze sie ze wzrostem E o wartosc tej migracji (chyba)
+
+summary(modell)
+
+plot(x = data$Migration,y = data$GDP)
+cor(data$GDP, data$Migration)
+
+cor(data$GDP, data$Migration)^2 # to jest to samo co Multiple R-squared w summary(model)
+
+
+# y = a + b1*x1 + b2*x2 + E
+model <- lm(GDP ~ Migration + Literacy, data)
+summary(model)

@@ -1,0 +1,2 @@
+"0","reg <- dane %>% count(region)"
+"0","hist(reg$n, breaks = 30)"

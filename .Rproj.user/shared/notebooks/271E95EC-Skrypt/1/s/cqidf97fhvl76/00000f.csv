@@ -1,0 +1,86 @@
+"0","install.packages('tidyverse')
+"
+"1","Error in "
+"1",""
+"1","install.packages"
+"1",""
+"1"," : "
+"1",""
+"1","Updating loaded packages"
+"1",""
+"1","
+"
+"0","install.packages('corrplot')"
+"1","Error in "
+"1",""
+"1","install.packages"
+"1",""
+"1"," : "
+"1",""
+"1","Updating loaded packages"
+"1",""
+"1","
+"
+"0","install.packages('lmtest')"
+"1","Error in "
+"1",""
+"1","install.packages"
+"1",""
+"1"," : "
+"1",""
+"1","Updating loaded packages"
+"1",""
+"1","
+"
+"0","install.packages('moments')"
+"1","Error in "
+"1",""
+"1","install.packages"
+"1",""
+"1"," : "
+"1",""
+"1","Updating loaded packages"
+"1",""
+"1","
+"
+"0","install.packages('rcompanion')"
+"2","WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+"
+"2","Instalowanie pakietu w ‘C:/Users/patry/AppData/Local/R/win-library/4.2’
+(ponieważ ‘lib’ nie jest określony)
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.2/rcompanion_2.4.15.zip'
+"
+"2","Content type 'application/zip'"
+"2"," length 601639 bytes (587 KB)
+"
+"2","downloaded 587 KB
+
+"
+"1","pakiet ‘rcompanion’ został pomyślnie rozpakowany oraz sumy MD5 zostały sprawdzone
+"
+"1","
+"
+"1",""
+"1","Pobrane pakiety binarne są w
+	C:\Users\patry\AppData\Local\Temp\RtmpkxECts\downloaded_packages"
+"1",""
+"1","
+"
+"0","install.packages('strucchange')"
+"2","WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+"
+"2","Instalowanie pakietu w ‘C:/Users/patry/AppData/Local/R/win-library/4.2’
+(ponieważ ‘lib’ nie jest określony)
+"
+"1","
+"
+"1",""
+"1","  Jest dostępna wersja binarna ale wersja ze źródłami jest późniejsza"
+"1",""
+"1",":
+"

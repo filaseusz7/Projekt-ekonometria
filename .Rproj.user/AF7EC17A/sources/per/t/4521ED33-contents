@@ -1,0 +1,357 @@
+data <- read.csv("countries of the world.csv", dec = ",")
+summary(data)
+library(tidyverse)
+library(corrplot)
+library(lmtest)
+
+mean(data$Population)
+median(data$Population)
+var(data$Population)
+sd(data$Population)
+
+data[2,3]
+data <- data[complete.cases(data),]
+cor(data$Population, data$GDP....per.capita.)
+
+colnames(data) <- c("Country", "Region", "Pop", "Area", "PopDens", "Coastline", "Migration", "InfMortality", "GDP", "Literacy",
+                    "Phones", "Arable", "Crops", "Other", "Climate", "Birthrate", "Deathrate", "Agri", "Industry", "Service")
+
+data %>% group_by(Region) %>% summarise(sum_Migration = sum(Migration), mean_GDP = mean(GDP)) %>% arrange(mean_GDP)
+
+data <- data %>% mutate(Region = str_trim(Region), Country = str_trim(Country))
+
+data %>% filter(Region == "OCEANIA")
+# y = a + b*x + E
+data_num <- data[,3:ncol(data)]
+model <- lm(GDP ~ . - Industry - Literacy - Area - PopDens - Pop - Birthrate - Coastline 
+            - Climate - Agri - Service - Other - Crops, data_num)
+model
+summary(model)
+
+plot(data$Migration, data$GDP)
+cor(data$GDP, data$Migration)
+
+data %>% filter(Migration > 0, Region == "WESTERN EUROPE") %>% top_n(3,PopDens)
+
+cor_mat <- cor(data_num)
+corrplot(cor_mat, order = 'hclust')
+
+# metoda hellwiga
+
+R0 <- cor_mat[7,-7]
+R <- cor_mat[-7,-7]
+k <- c(1,4,6)
+h <- vector()
+
+for(i in 1:length(k)){
+  h[i] <-(R0[k[i]]^2)/sum(abs(R[k[i],k]))
+}
+
+sum(h)
+
+m <- length(R0)
+comb <- expand.grid(replicate(m, c(TRUE, FALSE), simplify = FALSE))
+
+
+compute_H <- function(k){
+  h <- vector()
+  for(i in 1:length(k)){
+    h[i] <-(R0[k[i]]^2)/sum(abs(R[k[i],k]))
+  }
+  return(sum(h))
+}
+
+compute_H(c(1,2,3,4))
+
+find_max_H <- function(l){
+  max <- 0
+  comb_max <- vector()
+  comb <- expand.grid(replicate(l, c(TRUE, FALSE), simplify = FALSE))
+  for(i in 2:nrow(comb)-1){
+    x <- c(1:l)[as.logical(comb[i,])]
+    y <- compute_H(x)
+    if(y > max){
+      max <- y
+      comb_max <- x
+    }
+  }
+  return(comb_max)
+}
+
+find_max_H(m)
+
+k <- c(1:m)[as.logical(comb[200,])]
+
+model_H <- lm(GDP~Phones, data_num)
+summary(model_H)
+
+# diagnostyka
+
+model <- lm(GDP ~ .-Industry-Area-Pop-Coastline-Birthrate-Literacy-Climate,data_num)
+summary(model)
+
+# wartość oczekiwana reszt (=0)
+mean(model$residuals)
+
+dwtest(model) # test Durbina Watsona - autokorelacja
+# wniosek -> brak autokorelacji
+
+# heteroskedastyczność
+bptest(model) # studentized Breusch Pagan test
+
+gqtest(model, point = 0.7, order.by = ~ Migration, data = data_num) # Goldfield-Quandt test
+
+# normalność reszt
+
+shapiro.test(model$residuals)
+
+# jak sobie z tym radzić?
+
+model <- lm(log(GDP) ~ Migration + InfMortality + Phones + Arable + Deathrate, data_num)
+summary(model)
+
+# predykcja
+
+prediction <- predict(model, newdata = data.frame(
+  Migration = 10, InfMortality = 50, Phones = 100, Arable = 70, Deathrate = 20),
+  se.fit = TRUE
+)
+
+exp(prediction$fit)
+
+train <- data %>% slice_sample(prop = 0.9)
+test <- data %>% filter(!Country %in% train$Country)
+
+# estymacja i predykacja
+
+train_num <- train[,3:ncol(train)]
+test_num <- test[,3:ncol(test)]
+
+cor_mat <- cor(train_num)
+R0 <- cor_mat[7,-7]
+R <- cor_mat[-7,-7]
+m <- length(R0)
+find_max_H(m)
+
+model_train <- lm(GDP ~ Phones,train_num)
+prediction_test <- predict(model_train, newdata = test_num)
+prediction_test
+prediction_test - test_num[,7] #błąd ex post
+
+# estymacja i predykacja 2
+model <- lm(log(GDP) ~ Migration + InfMortality + Phones + Arable + Deathrate, train)
+prediction <- predict(model, newdata = test, se.fit = T)
+
+# błędy ex post
+ex_post <- test$GDP - exp(prediction$fit)
+MAE <- mean(abs(ex_post)) # mean absolute error
+RMSE <- mean(sqrt(ex_post^2)) # root mean squared error
+MAPE <- mean(abs(((test$GDP - exp(prediction$fit))/test$GDP)))  # mean absolute percentage error
+
+plot(test$GDP, exp(prediction$fit))
+
+# wizualizacja
+
+hist(train$GDP)
+boxplot(train$GDP)
+
+data %>% ggplot(aes(x = Migration, y = GDP, col = Service, size = Industry)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  theme_dark()
+
+test %>% ggplot(aes(x = Country, y = exp(prediction$fit))) +
+  geom_col() + 
+  geom_errorbar(aes(ymin = exp(prediction$fit) - exp(prediction$se.fit), 
+                                 ymax = exp(prediction$fit) + exp(prediction$se.fit))) +
+  guides(x = guide_axis(angle = 90))
+
+data <- data %>% mutate(Region = as.factor(Region), 
+                        Climate = as.factor(Climate))
+
+levels(data$Region) <- lowest_PKB$Region
+levels(data$Climate)
+table(data$Region)
+table(data$Climate)
+
+# data <- data %>% mutate(Climate1 = if_else(Climate == "1", 1, 0))
+
+dummy_vars <- model.matrix(~ Region + Climate, data)
+
+lowest_PKB <- data %>% group_by(Region) %>% summarize(mean_GDP = mean(GDP)) %>% 
+  arrange(mean_GDP)
+
+data_2 <- cbind(data, dummy_vars) %>% 
+  select(-Region, -Climate, -'(Intercept)', -Country)
+
+model <- lm(GDP ~ ., data_2)
+summary(model)
+
+# szeregi czasowe
+
+food <- read.csv("food_prices.csv") %>%
+  mutate(DATE = as.Date(DATE))
+plot(food$DATE, food$PFOODINDEXM, type = "l")
+
+y <- rnorm(100)
+plot(y, type = "l")
+
+
+suma = 0
+for(j in 1:1000){
+  a <- 1.001
+  n <- 100
+  x <- rep(0, n)
+  y <- rep(0, n)
+  for(i in 2:n){
+    x[i] <-a*x[i-1] + rnorm(1)
+    y[i] <-a*y[i-1] + rnorm(1)
+  }
+  modelxy <- lm(y~x)
+  sum <- summary(modelxy)
+  if(sum$coefficients[2,4]<0.05){
+    suma <- suma +1
+  }
+}
+suma/1000
+
+acf(food$PFOODINDEXM, lag.max = nrow(food)) # korelogram
+pacf(food$PFOODINDEXM, lag.max = nrow(food)) # partial korelogram
+
+Box.test(food$PFOODINDEXM) # hipoteza zerowa: autokorelacja nie występuje
+Box.test(diff(food$PFOODINDEXM)) # autokorelacja zależna tylko od jednego wstecz znika po użyciu diff
+
+arima(food$PFOODINDEXM, order = c(1, 0, 1)) #autoregressive, integrated, moving average
+
+
+# model logitowy
+
+titanic <- read.csv("titanic.csv", na.strings = '') %>%
+  mutate(across(c("Pclass", "Sex", "Cabin", "Embarked"), as.factor)) %>%
+  select(-PassengerId, -Name, -Ticket, -Cabin)
+
+summary(titanic)
+
+titanic <- titanic[complete.cases(titanic),]
+
+model <- lm(Survived ~ ., titanic)
+summary(model)
+hist(model$fitted.values)
+
+x <- seq(-10, 10, 0.5)
+plot(x)
+plot(exp(x)/(1+exp(x)))
+
+model <- glm(Survived ~ . - Parch - Fare, data = titanic, family = binomial(link="logit"))
+
+summary(model)
+hist(model$fitted.values)
+
+# toja
+
+test <- data.frame(
+  Pclass = "3", Sex = "male", Age = 21.00, SibSp = 2, Embarked = "Q", Survived = 1, Parch = 2, Fare = 70.00
+)
+
+prediction <- predict(model, newdata = test, type = 'response')
+prediction <- ifelse(prediction >= 0.5, 1, 0)
+
+# a to zbiory testowe
+
+titanic$Nr <- 1:nrow(titanic)
+train <- titanic %>% slice_sample(prop = 0.8)
+test <- titanic %>% filter(!Nr %in% train$Nr)
+
+
+rows <- 1:nrow(titanic)
+sample_train <- sample(rows, size = round(0.8 * nrow(titanic)))
+train <- titanic %>% slice(sample_train) # analogicznie dla test tylko ze znakiem minus
+
+
+model <- glm(Survived ~ . - Parch - Fare - Nr, data = train, family = binomial(link="logit"))
+prediction <- predict(model, newdata = test, type = 'response')
+prediction <- ifelse(prediction >= 0.5, 1, 0)
+
+df <- data.frame(
+  Real = test$Survived,
+  Pred = prediction
+)
+
+
+
+table <- data.frame(
+  Real_0 = c(
+    Pred_0 = df %>% filter(Real == 0, Pred == 0) %>% count(),
+    Pred_1 = df %>% filter(Real == 0, Pred == 1) %>% count()
+  ),
+  Real_1 = c(
+    Pred_0 = df %>% filter(Real == 1, Pred == 0) %>% count(),
+    Pred_1 = df %>% filter(Real == 1, Pred == 1) %>% count()
+  )
+)
+
+accuracy <- (table[1] + table[4])/sum(table)
+sensitivity <- table[4]/(table[3] + table[4]) # jak często wyłapiemy 1
+specificity <- table[1]/(table[1] + table[2]) # jak często rozpoznamy ze czegoś nie powinniśmy wyłapać
+
+# zarządzanie danymi
+
+files <- list.files(path = 'data', full.names = T)
+
+data_files <- lapply(files, read.csv)
+annual_data <- full_join(data_files[[1]], data_files[[2]]) %>% full_join(data_files[[3]])
+colnames(annual_data)[4:6] <- c('Gini', 'Health', 'Median age') 
+
+newest_data <- annual_data %>% pivot_longer(cols = c('Gini', 'Health', 'Median age'), 
+                                            names_to = 'Indicator', values_to = 'Values') %>%
+  filter(Year <=2020) %>%
+  filter(!is.na(Values)) %>%
+  group_by(Entity, Indicator) %>%
+  filter(Year == max(Year)) %>% select(-Year) %>%
+  pivot_wider(id_cols='Entity', names_from = 'Indicator',
+              values_from = 'Values') %>%
+  filter(across(everything(),complete.cases))
+
+# databases: database eurostat, our world in data, kaggle
+
+covid_data <- data_files[[4]] %>% select(Entity = location, date,
+                                         Cases = total_cases_per_million, 
+                                         Deaths = total_deaths_per_million) %>%
+  mutate(Year = substr(date, 1, 4)) %>% 
+  group_by(Entity, Year) %>% 
+  summarise( Cases = max(Cases, na.rm = T), Deaths = max(Deaths, na.rm = T)) %>%
+  filter(is.finite(Deaths))
+
+merged_data <- inner_join(covid_data, newest_data, by = 'Entity')
+
+model <- lm(Deaths ~., merged_data[,-1])
+summary(model)
+
+# Nieliniowy model
+
+A = 2
+alpha = 0.5
+beta = 0.2
+
+K <- 1:150
+L <- 1:150
+comb <- expand.grid(K,L) %>% rename(K = Var1, L = Var2) %>%
+  mutate(Q = A*K^alpha*L^beta)
+comb %>% ggplot(aes(x=K, y=L, fill=Q)) + geom_tile()
+
+Q1 <- A*100^alpha*100^beta
+Q2 <- A*101^alpha*100^beta
+Q3 <- A*100^alpha*101^beta
+
+(Q2 - Q1)/Q1*100
+(Q3 - Q1)/Q1*100
+
+A*100^alpha*100^beta
+A*110^alpha*110^beta
+
+cd_data <- read.csv('CD data.csv', sep = ";")
+model <- lm(log(Q) ~ log(Cap) + log(Emp), cd_data)
+summary(model)
+
+exp(model$coefficients[1])
+

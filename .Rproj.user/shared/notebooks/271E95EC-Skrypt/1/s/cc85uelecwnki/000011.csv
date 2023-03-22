@@ -1,0 +1,7 @@
+"0","dane <- dane %>%"
+"0","  mutate(across(c(""winery"", ""region"", ""body"", ""acidity"", ""type""), as.factor))"
+"0",""
+"0","rows <- 1:nrow(dane)"
+"0","sample_train <- sample(rows, size = round(0.8 * nrow(dane)))"
+"0","train <- dane %>% slice(sample_train)"
+"0","test <- dane %>% slice(-sample_train)"

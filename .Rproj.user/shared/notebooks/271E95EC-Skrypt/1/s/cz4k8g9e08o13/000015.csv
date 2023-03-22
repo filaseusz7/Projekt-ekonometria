@@ -1,0 +1,4 @@
+"0","ggplot(dane, aes(price)) +"
+"0","  geom_density() +"
+"0","  labs(title = ""Rozkład cen poszczególnych win"", x = ""cena"", y = """") +"
+"0","  theme_light()"

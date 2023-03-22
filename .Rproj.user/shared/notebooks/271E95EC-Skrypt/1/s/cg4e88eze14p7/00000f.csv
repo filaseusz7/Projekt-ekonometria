@@ -1,0 +1,6 @@
+"0","dane3 <- dane %>% filter(num_reviews <= 800, num_reviews >= 100)"
+"0","nrow(dane3)/nrow(dane)"
+"1","[1]"
+"1"," 0.8442667"
+"1","
+"

@@ -1,0 +1,6 @@
+"0","dane1 <- dane %>% filter(price <= 80)"
+"0","nrow(dane1)/nrow(dane)"
+"1","[1]"
+"1"," 0.9101333"
+"1","
+"

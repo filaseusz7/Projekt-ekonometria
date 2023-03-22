@@ -1,0 +1,118 @@
+---
+title: "Hiszpańskie Wina"
+author: "Patryk Góreczny, Kamil Husak, Mateusz Filas"
+date: '2022-05-12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages('dplyr')
+library('dplyr')
+```
+
+Wczytujemy dane z pliku wines_SPA
+Usuwamy zbędną kolumnę country, ponieważ występuje w niej jedna i ta sama wartość - Espana
+Usuwamy 'ogon' dla cen win oraz liczby ocen aby nie zakłamywały wyników
+
+```{r}
+dane <- read.csv('wines_SPA.csv')
+dane <- select(dane, -country)
+dane <- dane[!(dane$price>80),]
+dane <- dane[!(dane$num_reviews<100),]
+dane <- dane[!(dane$num_reviews>800),]
+dane <- dane[!(dane$year=='N.V.'),]
+dane <- dane[complete.cases(dane),]
+```
+Czyścimy dane 
+Czyszczenie winiarni
+```{r}
+winiarnie <- data.frame(unique(dane$winery))
+for(i in 1:length(unique(dane$winery))){
+  winiarnie[i,2] <- sum(dane$winery==winiarnie[i, 1])
+}
+for(i in 1:length(winiarnie[,1])){
+  for(j in 1:length(dane$winery))
+  {
+    if(winiarnie$unique.dane.winery[i] == dane$winery[j])
+    {
+      if(winiarnie$V2[i] < 13){
+        dane$winery[j] <- 'Inne'
+      }
+    }
+  }
+}
+
+winiarnie <- data.frame(unique(dane$winery))
+for(i in 1:length(unique(dane$winery))){
+  winiarnie[i,2] <- sum(dane$winery==winiarnie[i, 1])
+}
+```
+Czyszczenie regionów
+```{r}
+regiony <- data.frame(unique(dane$region))
+for(i in 1:length(unique(dane$region))){
+ regiony[i,2] <- sum(dane$region==regiony[i, 1])
+}
+for(i in 1:length(regiony[,1])){
+  for(j in 1:length(dane$region))
+  {
+    if(regiony$unique.dane.region[i] == dane$region[j])
+    {
+      if(regiony$V2[i] < 20){
+        dane$region[j] <- 'Inne'
+      }
+    }
+  }
+}
+regiony <- data.frame(unique(dane$region))
+for(i in 1:length(unique(dane$region))){
+  regiony[i,2] <- sum(dane$region==regiony[i, 1])
+}
+```
+Czyszczenie typów win
+```{r}
+typy <- data.frame(unique(dane$type))
+for(i in 1:length(unique(dane$type))){
+  typy[i,2] <- sum(dane$type==typy[i, 1])
+}
+for(i in 1:length(typy[,1])){
+  for(j in 1:length(dane$type))
+  {
+    if(typy$unique.dane.type[i] == dane$type[j])
+    {
+      if(typy$V2[i] < 70){
+        dane$type[j] <- 'Inne'
+      }
+    }
+  }
+}
+
+typy <- data.frame(unique(dane$type))
+for(i in 1:length(unique(dane$type))){
+  typy[i,2] <- sum(dane$type==typy[i, 1])
+}
+```
+Czyszczenie win
+```{r}
+wina <- data.frame(unique(dane$wine))
+for(i in 1:length(unique(dane$wine))){
+  wina[i,2] <- sum(dane$wine==wina[i, 1])
+}
+for(i in 1:length(wina[,1])){
+  for(j in 1:length(dane$wine))
+  {
+    if(wina$unique.dane.wine[i] == dane$wine[j])
+    {
+      if(wina$V2[i] < 62){
+        dane$wine[j] <- 'Inne'
+      }
+    }
+  }
+}
+
+wina <- data.frame(unique(dane$wine))
+for(i in 1:length(unique(dane$wine))){
+  wina[i,2] <- sum(dane$wine==wina[i, 1])
+}
+```

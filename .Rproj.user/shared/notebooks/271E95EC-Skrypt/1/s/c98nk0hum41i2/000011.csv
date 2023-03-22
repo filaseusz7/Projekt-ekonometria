@@ -1,0 +1,4 @@
+"0","traint <- train %>%"
+"0","  arrange(price)"
+"0","traint %>%"
+"0","  filter(price < 45) "

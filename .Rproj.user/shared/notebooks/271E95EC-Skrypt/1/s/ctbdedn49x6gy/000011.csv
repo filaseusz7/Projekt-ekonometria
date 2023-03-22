@@ -1,0 +1,6 @@
+"0","prediction <- predict(model, newdata = test, se.fit = T)"
+"0","ex_post <- test$price - prediction$fit"
+"0","MAE <- mean(abs(ex_post)) # mean absolute error"
+"0","RMSE <- mean(sqrt(ex_post^2)) # root mean squared error"
+"0","MAPE <- mean(abs(((test$price - prediction$fit)/test$price)))  # mean absolute percentage error"
+"0",""

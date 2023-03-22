@@ -1,0 +1,134 @@
+install.packages('dplyr')
+install.packages('tidyverse')
+install.packages('corrplot')
+install.packages('lmtest')
+library(dplyr)
+library(tidyverse)
+library(corrplot)
+library(lmtest)
+dane <- read.csv('wines_SPA.csv') 
+dane <- select(dane, -country, -wine)
+dane <- dane[!(dane$price>80),]
+dane <- dane[!(dane$num_reviews<100),]
+dane <- dane[!(dane$num_reviews>800),]
+dane <- dane[!(dane$year=='N.V.'),]
+dane <- dane[complete.cases(dane),]
+dane <- dane[!(dane$body==2),]
+dane <- dane[!(dane$acidity==1),]
+#czyszczenie winiarni
+winiarnie <- data.frame(unique(dane$winery))
+for(i in 1:length(unique(dane$winery))){
+  winiarnie[i,2] <- sum(dane$winery==winiarnie[i, 1])
+}
+for(i in 1:length(winiarnie[,1])){
+  for(j in 1:length(dane$winery))
+  {
+    if(winiarnie$unique.dane.winery[i] == dane$winery[j])
+    {
+      if(winiarnie$V2[i] < 13){
+        dane$winery[j] <- 'Inne'
+      }
+    }
+  }
+}
+
+winiarnie <- data.frame(unique(dane$winery))
+for(i in 1:length(unique(dane$winery))){
+  winiarnie[i,2] <- sum(dane$winery==winiarnie[i, 1])
+}
+# czyszczenie regionów
+regiony <- data.frame(unique(dane$region))
+for(i in 1:length(unique(dane$region))){
+ regiony[i,2] <- sum(dane$region==regiony[i, 1])
+}
+for(i in 1:length(regiony[,1])){
+  for(j in 1:length(dane$region))
+  {
+    if(regiony$unique.dane.region[i] == dane$region[j])
+    {
+      if(regiony$V2[i] < 20){
+        dane$region[j] <- 'Inne'
+      }
+    }
+  }
+}
+
+regiony <- data.frame(unique(dane$region))
+for(i in 1:length(unique(dane$region))){
+  regiony[i,2] <- sum(dane$region==regiony[i, 1])
+}
+#czysczenie typów
+typy <- data.frame(unique(dane$type))
+for(i in 1:length(unique(dane$type))){
+  typy[i,2] <- sum(dane$type==typy[i, 1])
+}
+for(i in 1:length(typy[,1])){
+  for(j in 1:length(dane$type))
+  {
+    if(typy$unique.dane.type[i] == dane$type[j])
+    {
+      if(typy$V2[i] < 70){
+        dane$type[j] <- 'Inne'
+      }
+    }
+  }
+}
+
+typy <- data.frame(unique(dane$type))
+for(i in 1:length(unique(dane$type))){
+  typy[i,2] <- sum(dane$type==typy[i, 1])
+}
+#czyszczenie win
+wina <- data.frame(unique(dane$wine))
+for(i in 1:length(unique(dane$wine))){
+  wina[i,2] <- sum(dane$wine==wina[i, 1])
+}
+for(i in 1:length(wina[,1])){
+  for(j in 1:length(dane$wine))
+  {
+    if(wina$unique.dane.wine[i] == dane$wine[j])
+    {
+      if(wina$V2[i] < 62){
+        dane$wine[j] <- 'Inne'
+      }
+    }
+  }
+}
+
+wina <- data.frame(unique(dane$wine))
+for(i in 1:length(unique(dane$wine))){
+  wina[i,2] <- sum(dane$wine==wina[i, 1])
+}
+
+dane <- dane %>%
+  mutate(across(c("winery", "region", "body", "acidity", "type"), as.factor))
+summary(dane)
+
+rows <- 1:nrow(dane)
+sample_train <- sample(rows, size = round(0.8 * nrow(dane)))
+train <- dane %>% slice(sample_train)
+test <- dane %>% slice(-sample_train)
+
+model <- lm(price ~ ., data=train)
+summary(model)
+
+uniqWinery <- unique(dane$winery)
+uniqType <- unique(dane$type)
+
+df_type_winery <- matrix(0,length(uniqWinery),length(uniqType))
+df_type_winery <- data.frame(df_type_winery)
+for(i in 1:length(uniqWinery)){
+  for(j in 1:length(uniqType)){
+    for(k in 1:length(dane$winery)){
+    if(uniqWinery[i] == dane$winery[k])
+     {
+        if(uniqType[j] == dane$type[k]){
+         df_type_winery[i,j] <- df_type_winery[i,j] + 1
+        }
+      }
+    }
+  }
+}
+colnames(df_type_winery) <- uniqType
+rownames(df_type_winery) <- uniqWinery
+

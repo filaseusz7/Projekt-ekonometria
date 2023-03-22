@@ -1,0 +1,29 @@
+install.packages('dplyr')
+library('dplyr')
+dane <- read.csv('wines_SPA.csv')
+dane <- select(dane, -country, -wine)
+dane <- dane[!(dane$price>80),]
+dane <- dane[!(dane$num_reviews<100),]
+dane <- dane[!(dane$num_reviews>800),]
+dane <- dane[!(dane$year=='N.V.'),]
+dane <- dane[complete.cases(dane),]
+winiarnie <- data.frame(unique(dane$winery))
+for(i in 1:length(unique(dane$winery))){
+  winiarnie[i,2] <- sum(dane$winery==winiarnie[i, 1])
+}
+for(i in 1:length(winiarnie[,1])){
+  for(j in 1:length(dane$winery))
+  {
+    if(winiarnie$unique.dane.winery[i] == dane$winery[j])
+    {
+      if(winiarnie$V2[i] < 13){
+        dane$winery[j] <- 'Inne'
+      }
+    }
+  }
+}
+
+winiarnie <- data.frame(unique(dane$winery))
+for(i in 1:length(unique(dane$winery))){
+  winiarnie[i,2] <- sum(dane$winery==winiarnie[i, 1])
+}
